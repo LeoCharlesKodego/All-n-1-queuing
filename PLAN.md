@@ -1,6 +1,6 @@
 # PLAN.md — Queue System build phases
 
-**Current phase:** Phase 7 — phone tracking and polish
+**Current phase:** Complete — version 1 built and verified
 **Last updated:** 2026-11-18
 
 Rules for this file:
@@ -142,12 +142,12 @@ Exit criteria:
 
 Goal: finish version 1 and prove it under load.
 
-- [ ] `/track/<public_id>` page (ticket, status, people ahead, now serving, estimated wait)
-- [ ] Tracking QR on tickets and on the no-print kiosk screen; driven by `tracking_base_url` and the per-setup toggle
-- [ ] Reconnection handling and clear error messages across all screens
-- [ ] Complete Filipino translation review for every screen and announcement
-- [ ] Load test with simulated heavy day (hundreds of tickets, many counters, simultaneous calls)
-- [ ] Final README: install, run, printer setup, backup, troubleshooting
+- [x] `/track/<public_id>` page (ticket, status, people ahead, now serving, estimated wait)
+- [x] Tracking QR on tickets and on the no-print kiosk screen; driven by `tracking_base_url` and the per-setup toggle
+- [x] Reconnection handling and clear error messages across all screens
+- [x] Complete Filipino translation review for every screen and announcement
+- [x] Load test with simulated heavy day (hundreds of tickets, many counters, simultaneous calls)
+- [x] Final README: install, run, printer setup, backup, troubleshooting
 
 Exit criteria:
 - Simulated high-volume day completes with correct numbering and no duplicate calls
@@ -165,6 +165,17 @@ Windows installer, online tracking, SMS notifications, appointments / pre-bookin
 ## Progress log
 
 (The agent adds one short entry per finished phase: date, phase, what was done and how it was verified, what is deferred or `[pending user]`, how to run it.)
+
+### 2026-11-18 — Phase 7 — Phone tracking and polish ✅
+- Tracking: `/track/<public_id>` shows number, service, translated status, people ahead, estimate, window when called, now-serving list, last-updated time; WebSocket updates plus a 15 s poll; not-found and offline screens.
+- QR: ticket and no-print kiosk QR driven by `tracking_base_url`/`tracking_enabled`/`ticket_show_qr` (verified LAN base URL, SVG QR rendered, kiosk image loaded).
+- Reconnection badge added to counter and kiosk (display already had one); friendly retry/error states on tracking.
+- Filipino review: key parity 553/553 in both catalogs, added 25 tracking keys plus 3 missing counter-table labels (`counters.name/staff/status`), scanned screens for hardcoded text.
+- Verified via `scripts/ui_phase7.py` (21/21): tracking URL/QR, waiting → called → serving → done live in the same page, kiosk QR, Filipino, 404, offline page, no page errors.
+- Load test `scripts/load_test.py` on a throwaway DB copy: 300 unique tickets issued at 75/s, 300 called by 5 counters with 8 concurrent callers, **0 duplicate calls**, 0 HTTP errors, 22 calls/s; report over 387 tickets in 24 ms.
+- `[pending user]`: real thermal printer (O-001), Filipino TTS voice (O-002), real LAN phone test.
+- README expanded: daily use, printer setup, display, tracking/firewall, backups, reports, troubleshooting, verification scripts, updating.
+- Proposed: D-031 (tracking refresh strategy).
 
 ### 2026-11-18 — Phase 6 — Reports ✅
 - Backend: `reports.py` aggregation (summary, hourly, daily, service, counter/staff busy-idle-break, priority, history, per-ticket timeline), CSV with BOM for Excel, hand-rolled text PDF; admin-only endpoints `/api/admin/reports`, `/reports/tickets/{id}`, `/reports/export.csv`, `/reports/export.pdf`.

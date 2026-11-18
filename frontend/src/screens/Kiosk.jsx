@@ -48,7 +48,7 @@ export default function Kiosk() {
     load();
   }, [load]);
 
-  useLive(() => load());
+  const connected = useLive(() => load());
 
   useEffect(() => {
     const id = setInterval(() => setClock(new Date()), 15000);
@@ -151,6 +151,7 @@ export default function Kiosk() {
   const logo = data.logo;
   return (
     <div className="kiosk">
+      {!connected && <div className="reconnect">{t("common.reconnecting")}</div>}
       <style>{`@media print { @page { size: ${settings.ticket_paper_size === "80" ? "80mm" : "58mm"} auto; margin: 2mm; } }`}</style>
       <header className="kiosk-head no-print">
         <div className="row gap">

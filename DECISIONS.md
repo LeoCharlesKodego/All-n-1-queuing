@@ -42,6 +42,7 @@ The agent never marks its own proposals as Approved. New entries continue the nu
 | D-028 | Defaults for open items: `interleave` prioritises every 3rd call (N=3); daily reset at 00:00 local time; recall wait 60 s; recall limit 3; default service time 300 s; queue alert thresholds come from the preset (Bill Payment 40, Express 15); image duration 10 s. All editable in admin/setup. Proposed answers to O-003, O-005, O-006. | 2026-11-18 |
 | D-029 | At the daily reset, tickets still active from an earlier business date are set to `cancelled` with an `expired` event (they are never called on the new day); numbering for the new day starts at 001. The sweep runs at startup and every 30 s. | 2026-11-18 |
 | D-030 | Tickets print with the browser print dialog from a print-only 58/80 mm CSS layout; for silent one-touch printing run Chrome with `--kiosk-printing`. A browser cannot see paper-out/offline state, so the kiosk offers a "Printer not working?" report that stores `printer_status` + `printer_note` for the admin alert; automatic detection waits for the real printer (O-001). | 2026-11-18 |
+| D-031 | The tracking page is read-only and loads `/api/track/<public_id>` on open, then refreshes from WebSocket events (debounced) with a 15 s polling fallback so a phone that slept or lost the socket still recovers. A missing ticket shows a 404 screen; an unreachable server shows an offline message with Try again. | 2026-11-18 |
 
 ## Open items
 

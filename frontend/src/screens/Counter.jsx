@@ -75,7 +75,7 @@ export default function Counter() {
       .catch(() => {});
   }, [load]);
 
-  useLive(() => {
+  const connected = useLive(() => {
     if (session) load();
   });
 
@@ -227,6 +227,7 @@ export default function Counter() {
 
   return (
     <div className="counter">
+      {!connected && <div className="reconnect">{t("common.reconnecting")}</div>}
       <header className="counter-top">
         <div className="row gap wrap">
           <div>
