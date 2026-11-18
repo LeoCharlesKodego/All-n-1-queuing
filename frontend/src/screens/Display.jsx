@@ -24,6 +24,29 @@ function useClock(timezone) {
   return { time, date };
 }
 
+function minutesOf(value) {
+  if (!value || !/^\d{1,2}:\d{2}$/.test(value)) return null;
+  const [hours, minutes] = value.split(":").map(Number);
+  return hours * 60 + minutes;
+}
+
+function mediaAllowed(settings) {
+  const schedule = settings?.media_schedule;
+  if (!schedule || !schedule.enabled) return true;
+  const from = minutesOf(schedule.from);
+  const to = minutesOf(schedule.to);
+  if (from === null || to === null) return true;
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: settings.timezone || "Asia/Manila",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(new Date());
+  const part = (type) => Number(parts.find((p) => p.type === type)?.value || 0);
+  const now = part("hour") * 60 + part("minute");
+  return from <= to ? now >= from && now < to : now >= from || now < to;
+}
+
 export default function Display() {
   const [data, setData] = useState(null);
   const [unlocked, setUnlocked] = useState(false);
@@ -144,7 +167,7 @@ export default function Display() {
   const connected = useLive(handleEvent);
   const { time, date } = useClock(settings?.timezone || "Asia/Manila");
 
-  const playlist = (data?.media || []).filter((f) => !f.is_logo);
+  const playlist = mediaAllowed(settings) ? (data?.media || []).filter((f) => !f.is_logo) : [];
   const current = playlist.length ? playlist[mediaIndex % playlist.length] : null;
 
   useEffect(() => {
@@ -307,23 +330,23 @@ export default function Display() {
             )}
           </section>
 
-          <aside className="media-pane" style={{ flexBasis: `${100 - queueWidth}%` }}>
-            {current?.kind === "video" ? (
-              <video
-                key={current.url}
-                ref={videoRef}
-                src={current.url}
-                autoPlay
-                loop
-                muted={!unlocked}
-                playsInline
-              />
-            ) : current ? (
-              <img key={current.url} src={current.url} alt="" />
-            ) : (
-              <p className="media-label">{L("display.no_media")}</p>
-            )}
-          </aside>
+          {playlist.length > 0 && (
+            <aside className="media-pane" style={{ flexBasis: `${100 - queueWidth}%` }}>
+              {current?.kind === "video" ? (
+                <video
+                  key={current.url}
+                  ref={videoRef}
+                  src={current.url}
+                  autoPlay
+                  loop
+                  muted={!unlocked}
+                  playsInline
+                />
+              ) : (
+                <img key={current.url} src={current.url} alt="" />
+              )}
+            </aside>
+          )}
         </main>
       )}
 

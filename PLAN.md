@@ -1,6 +1,6 @@
 # PLAN.md — Queue System build phases
 
-**Current phase:** Phase 5 — admin completion
+**Current phase:** Phase 6 — reports
 **Last updated:** 2026-11-18
 
 Rules for this file:
@@ -103,13 +103,13 @@ Exit criteria:
 
 Goal: everything configurable and monitorable from the admin panel.
 
-- [ ] Live dashboard (issued, waiting, serving, completed, average wait and service time, counter status, queue-size alerts)
-- [ ] Services, Counters, Staff management (add, edit, disable, reset PIN)
-- [ ] Priority rules management
-- [ ] Display and media settings (layout, banner, voice and language, media folder status, optional schedule)
-- [ ] Kiosk and ticket settings (design, paper size, printer test, intake methods, duplicate delay)
-- [ ] System: institution info, backup and restore, daily reset time, network address, "test everything" page
-- [ ] Automatic daily backup on the server
+- [x] Live dashboard (issued, waiting, serving, completed, average wait and service time, counter status, queue-size alerts)
+- [x] Services, Counters, Staff management (add, edit, disable, reset PIN)
+- [x] Priority rules management
+- [x] Display and media settings (layout, banner, voice and language, media folder status, optional schedule)
+- [x] Kiosk and ticket settings (design, paper size, printer test, intake methods, duplicate delay)
+- [x] System: institution info, backup and restore, daily reset time, network address, "test everything" page
+- [x] Automatic daily backup on the server
 
 Exit criteria:
 - Every setting made in the wizard is editable in the admin panel and takes effect immediately
@@ -165,6 +165,13 @@ Windows installer, online tracking, SMS notifications, appointments / pre-bookin
 ## Progress log
 
 (The agent adds one short entry per finished phase: date, phase, what was done and how it was verified, what is deferred or `[pending user]`, how to run it.)
+
+### 2026-11-18 — Phase 5 — Admin panel ✅
+- Tabbed admin panel: dashboard (stats, queue alerts, counters, printer), Services, Counters, Staff, Priority rules, Display & media, Kiosk & ticket, System; all text in EN/FIL.
+- Feature prefixes/names/hours/express, counter-service assignment, staff PIN reset/disable, priority mode, banner/voice/layout/media schedule, ticket paper/printer test, institution/logo/timezone/tracking, LAN QR, 12 system checks, backup list/create/restore.
+- Verified live in Chrome via Playwright: renamed a service and disabled a counter while tickets waited (numbers and waiting status unchanged), staff created and signed in at its counter, banner + `screen_language=both` reached the display, media pane hidden outside `media_schedule` and shown inside with a test image, all 12 checks OK, backup created then restored (post-backup marker ticket gone, counts back).
+- `[pending user]`: real thermal printer output (O-001); print test uses the browser dialog.
+- Run: `python -m uvicorn backend.app.main:app --host 0.0.0.0 --port 8000`, open `/admin` (demo admin `admin` / `secret123`).
 
 ### 2026-11-18 — Phase 4 — Public display ✅
 - Display: header with logo/name/clock, NOW SERVING box with flash, window grid (called/serving/open/break/closed), next-in-line chips, scrolling banner, split media pane, empty-queue full-screen media.
