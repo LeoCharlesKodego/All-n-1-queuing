@@ -1,6 +1,6 @@
 # PLAN.md — Queue System build phases
 
-**Current phase:** Phase 4 — public display
+**Current phase:** Phase 5 — admin completion
 **Last updated:** 2026-11-18
 
 Rules for this file:
@@ -83,14 +83,14 @@ Exit criteria:
 
 Goal: the waiting-area TV works reliably.
 
-- [ ] Display layout: NOW SERVING, window list with closed/away state, next in line, header, banner
-- [ ] Live updates over WebSocket; automatic reconnect and state recovery
-- [ ] Chime, flash, and browser text-to-speech announcement in English and Filipino; recall repeats
-- [ ] "Start Display" audio unlock and sound test
-- [ ] Media area: playlist from the server media folder (videos and images), looping, image duration, volume ducking during announcements
-- [ ] Empty-queue full-screen media mode
-- [ ] Scrolling banner text
-- [ ] Multiple displays showing the same queue
+- [x] Display layout: NOW SERVING, window list with closed/away state, next in line, header, banner
+- [x] Live updates over WebSocket; automatic reconnect and state recovery
+- [x] Chime, flash, and browser text-to-speech announcement in English and Filipino; recall repeats
+- [x] "Start Display" audio unlock and sound test
+- [x] Media area: playlist from the server media folder (videos and images), looping, image duration, volume ducking during announcements
+- [x] Empty-queue full-screen media mode
+- [x] Scrolling banner text
+- [x] Multiple displays showing the same queue
 
 Exit criteria:
 - Calling a number updates the display instantly and announces it
@@ -165,6 +165,13 @@ Windows installer, online tracking, SMS notifications, appointments / pre-bookin
 ## Progress log
 
 (The agent adds one short entry per finished phase: date, phase, what was done and how it was verified, what is deferred or `[pending user]`, how to run it.)
+
+### 2026-11-18 — Phase 4 — Public display ✅
+- Display: header with logo/name/clock, NOW SERVING box with flash, window grid (called/serving/open/break/closed), next-in-line chips, scrolling banner, split media pane, empty-queue full-screen media.
+- Live: WebSocket call events update all open displays instantly, chime + EN/FIL speech (voice_lang), "Start display" audio unlock, sound test, reconnect badge; polls every 30 s as a safety net.
+- Media: image/video playlist from `media/`, image duration, video looping, volume ducked to 0.08 during announcements.
+- Verified live in Chrome via Playwright: call from a counter changed two displays at once and set the flash class; speech text queued (EN + FIL) with audio context chime; media rotation and video playback worked; empty queue showed full-screen media and split layout returned when a ticket was issued; killing the server showed "Reconnecting…" and restarting cleared it while keeping the last state; bilingual screen labels (`screen_language=both`).
+- Limitation: speech audibility/voice quality cannot be judged headlessly (O-002 pending); test media files were removed after verification.
 
 ### 2026-11-18 — Phase 3 — Kiosk and ticket ✅
 - Kiosk: welcome + language toggle, priority question, service grid with closed/cut-off reasons and waiting counts, account-number keypad, ticket screen with number/people ahead/estimate/QR, 12 s auto-return, automatic fullscreen on first tap.

@@ -701,6 +701,15 @@ def display_state() -> dict:
             FROM tickets t JOIN services s ON s.id=t.service_id
             LEFT JOIN priority_types p ON p.id=t.priority_type_id
             WHERE t.status='waiting' ORDER BY t.issued_at ASC LIMIT 8""")
+        now_serving = db.all_rows(conn, """
+            SELECT t.id, t.number, t.status, t.last_event_at, c.id AS counter_id, c.name AS counter_name,
+                   s.name AS service_name, t.priority_type_id,
+                   p.name_en AS priority_en, p.name_fil AS priority_fil
+            FROM tickets t JOIN counters c ON c.id=t.counter_id
+            JOIN services s ON s.id=t.service_id
+            LEFT JOIN priority_types p ON p.id=t.priority_type_id
+            WHERE t.status IN ('called','serving')
+            ORDER BY t.last_event_at DESC LIMIT 3""")
         waiting_total = conn.execute("SELECT COUNT(*) FROM tickets WHERE status='waiting'").fetchone()[0]
         estimates = {}
         for sid in [r["id"] for r in conn.execute("SELECT id FROM services WHERE is_active=1")]:
@@ -708,6 +717,7 @@ def display_state() -> dict:
         media = media_playlist()
         return {
             "windows": windows,
+            "now_serving": now_serving,
             "next": next_up,
             "waiting_total": waiting_total,
             "estimates": estimates,
