@@ -1,6 +1,6 @@
 # PLAN.md — Queue System build phases
 
-**Current phase:** Phase 3 — kiosk and ticket
+**Current phase:** Phase 4 — public display
 **Last updated:** 2026-11-18
 
 Rules for this file:
@@ -62,14 +62,15 @@ Exit criteria:
 
 Goal: customers can take a ticket, and tickets print.
 
-- [ ] Kiosk flow: welcome, language toggle, priority question first, service choice, optional account number pad, ticket issued
-- [ ] Greyed-out closed or past-cut-off services with reason
-- [ ] Duplicate-ticket delay
-- [ ] Ticket print layout for 58 mm and 80 mm; test on real thermal printer
-- [ ] Printer error handling (out of paper / offline) with kiosk message and admin alert
-- [ ] No-print mode: on-screen QR to get the ticket on a phone
-- [ ] Staff-issued tickets from the counter console, shown only when enabled in setup
-- [ ] Fullscreen kiosk behavior
+- [x] Kiosk flow: welcome, language toggle, priority question first, service choice, optional account number pad, ticket issued
+- [x] Greyed-out closed or past-cut-off services with reason
+- [x] Duplicate-ticket delay
+- [x] Ticket print layout for 58 mm and 80 mm
+- [pending user] Test printing on a real thermal printer (O-001)
+- [pending user] Printer error handling: kiosk reports a printer problem and shows a message; automatic paper-out detection needs hardware testing
+- [x] No-print mode: on-screen QR to get the ticket on a phone
+- [x] Staff-issued tickets from the counter console, shown only when enabled in setup
+- [x] Fullscreen kiosk behavior
 
 Exit criteria:
 - Ticket printed from the kiosk with one touch (document the exact browser setup used)
@@ -164,6 +165,13 @@ Windows installer, online tracking, SMS notifications, appointments / pre-bookin
 ## Progress log
 
 (The agent adds one short entry per finished phase: date, phase, what was done and how it was verified, what is deferred or `[pending user]`, how to run it.)
+
+### 2026-11-18 — Phase 3 — Kiosk and ticket ✅
+- Kiosk: welcome + language toggle, priority question, service grid with closed/cut-off reasons and waiting counts, account-number keypad, ticket screen with number/people ahead/estimate/QR, 12 s auto-return, automatic fullscreen on first tap.
+- Ticket: print-only layout for 58 mm and 80 mm (Chrome kiosk-printing recommended), no-print mode shows the QR, printer-problem button reports `printer_status`/`printer_note` for the admin alert.
+- Verified live in Chrome via Playwright: full EN flow incl. account number, FIL welcome, duplicate-delay message (57 s), disabled service reason, print-media screenshots for both paper sizes, no-print QR notice, printer report endpoint, fullscreen true after first tap.
+- `[pending user]`: real thermal printer test and automatic paper-out/offline detection (O-001).
+- Proposed: D-030 (browser print strategy and manual printer-problem report).
 
 ### 2026-11-18 — Phase 2 — Core queue ✅
 - Backend: staff PIN auth (PBKDF2, rate limit, session cookie), call-next/start/done/recall/skip/hold/resume/transfer/reenter/status/issue endpoints, admin staff CRUD, daily-reset sweep that cancels previous business dates, ticket events log.

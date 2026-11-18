@@ -41,12 +41,13 @@ The agent never marks its own proposals as Approved. New entries continue the nu
 | D-027 | Timezone handling uses `zoneinfo` when the OS has tz data, otherwise a fixed UTC offset for the three zones offered in setup (Asia/Manila +8, Asia/Singapore +8, UTC +0). Both PH zones have no DST, so the offset is exact. This avoids the `tzdata` package dependency on Windows. | 2026-11-18 |
 | D-028 | Defaults for open items: `interleave` prioritises every 3rd call (N=3); daily reset at 00:00 local time; recall wait 60 s; recall limit 3; default service time 300 s; queue alert thresholds come from the preset (Bill Payment 40, Express 15); image duration 10 s. All editable in admin/setup. Proposed answers to O-003, O-005, O-006. | 2026-11-18 |
 | D-029 | At the daily reset, tickets still active from an earlier business date are set to `cancelled` with an `expired` event (they are never called on the new day); numbering for the new day starts at 001. The sweep runs at startup and every 30 s. | 2026-11-18 |
+| D-030 | Tickets print with the browser print dialog from a print-only 58/80 mm CSS layout; for silent one-touch printing run Chrome with `--kiosk-printing`. A browser cannot see paper-out/offline state, so the kiosk offers a "Printer not working?" report that stores `printer_status` + `printer_note` for the admin alert; automatic detection waits for the real printer (O-001). | 2026-11-18 |
 
 ## Open items
 
 | ID | Item | Needed by |
 |---|---|---|
-| O-001 | Real thermal printer model(s) and paper size(s) for the first site; confirm the exact browser setup that prints silently with one touch. | Phase 3 |
+| O-001 | Real thermal printer model(s) and paper size(s) for the first site; confirm the exact browser setup that prints silently with one touch (58/80 mm layout is ready; hardware test pending). | Phase 3 |
 | O-002 | Confirm Filipino text-to-speech voice availability on the display PC (voice quality depends on what is installed). If unavailable, decide on a fallback (for example, announce in English or use a chime). | Phase 4 |
 | O-003 | Confirm the exact behavior of `interleave` priority mode (every Nth call goes to a waiting priority ticket) and its default N. | Phase 2 |
 | O-004 | Confirm with each institution the legal or policy basis for the default priority lanes. | Before go-live |

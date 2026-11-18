@@ -243,67 +243,6 @@ tr:last-child td { border-bottom: 0; }
 .media-item .video-chip { display: grid; place-items: center; font-size: 1.5rem; }
 .media-item span { display: block; padding: 6px 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-/* ============ Kiosk ============ */
-.kiosk {
-  min-height: 100vh; display: flex; flex-direction: column;
-  background: radial-gradient(circle at 20% 0%, #0e4c5b, #072c37 60%);
-  color: #fff; padding: 26px 32px 34px; gap: 22px;
-}
-.kiosk-head { display: flex; justify-content: space-between; align-items: center; gap: 20px; }
-.kiosk-head .brand h1 { color: #fff; font-size: clamp(1.4rem, 2.4vw, 2.2rem); }
-.kiosk-head .brand-logo { width: 72px; height: 72px; background: #fff; }
-.kiosk-body { flex: 1; display: flex; flex-direction: column; gap: 22px; justify-content: center; }
-.kiosk h2 { font-size: clamp(1.3rem, 2.4vw, 2rem); }
-.kiosk .prompt { text-align: center; font-size: clamp(1.1rem, 1.8vw, 1.5rem); color: #cfe6ea; }
-.choice-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
-.choice-btn {
-  background: rgba(255, 255, 255, 0.08); border: 2px solid rgba(255, 255, 255, 0.18);
-  color: #fff; border-radius: 18px; padding: 28px 22px; font-size: clamp(1.15rem, 1.8vw, 1.6rem);
-  font-weight: 700; text-align: left; display: flex; flex-direction: column; gap: 8px; min-height: 120px;
-  justify-content: center;
-}
-.choice-btn small { font-size: 0.9rem; font-weight: 500; color: #cfe6ea; }
-.choice-btn:hover, .choice-btn:focus-visible { background: rgba(255, 255, 255, 0.16); border-color: #fff; }
-.choice-btn.priority { border-color: rgba(227, 161, 59, 0.6); }
-.choice-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-.choice-btn .express-tag { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); }
-.kiosk-foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; color: #9fc0c7; font-size: 0.85rem; }
-.kiosk .lang-switch { border-color: rgba(255,255,255,0.3); background: rgba(255,255,255,0.08); }
-.kiosk .lang-switch button { color: #d7e8eb; }
-.kiosk .lang-switch button.active { background: #fff; color: var(--primary-dark); }
-.keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; max-width: 420px; margin: 0 auto; }
-.keypad button {
-  background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;
-  font-size: 1.6rem; font-weight: 700; border-radius: 14px; padding: 16px 0;
-}
-.keypad button:hover { background: rgba(255,255,255,0.2); }
-.account-display {
-  text-align: center; font-size: 2rem; letter-spacing: 0.15em; background: rgba(0,0,0,0.25);
-  border-radius: 12px; padding: 14px; min-height: 64px; font-variant-numeric: tabular-nums;
-}
-.kiosk-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
-.ticket-view { display: flex; gap: 32px; justify-content: center; align-items: center; flex-wrap: wrap; }
-.ticket-paper {
-  background: #fff; color: var(--ink); width: 320px; border-radius: 6px; padding: 22px 20px;
-  text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.35);
-}
-.ticket-paper .inst { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
-.ticket-paper .num { font-size: 3.2rem; font-weight: 800; margin: 8px 0 2px; letter-spacing: 0.02em; }
-.ticket-paper .svc { font-weight: 600; }
-.ticket-paper .priority-tag { display: inline-block; background: #fdf3e2; color: #8a5a12; padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; margin-top: 8px; }
-.ticket-paper .meta { font-size: 0.8rem; color: var(--muted); margin-top: 10px; display: flex; justify-content: space-between; }
-.ticket-paper .qr { width: 128px; height: 128px; margin: 12px auto 0; padding: 0; }
-.ticket-paper hr { border: 0; border-top: 1px dashed #b9c6ca; margin: 12px 0; }
-.kiosk-ticket-info { color: #d7e8eb; max-width: 320px; display: flex; flex-direction: column; gap: 12px; }
-.kiosk-ticket-info .big-msg { font-size: 1.4rem; font-weight: 700; color: #fff; }
-.countdown { font-size: 0.85rem; color: #9fc0c7; }
-
-/* ============ Counter ============ */
-.counter { min-height: 100vh; display: flex; flex-direction: column; background: var(--bg); }
-.counter-top {
-  display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap;
-  padding: 12px 20px; background: var(--primary-dark); color: #fff;
-}
 .counter-top h1 { font-size: 1.15rem; }
 .counter-top .muted { color: #b9d5da; }
 .counter-top .btn { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); color: #fff; }
@@ -403,6 +342,50 @@ tr:last-child td { border-bottom: 0; }
 .now-serving-row { display: flex; justify-content: space-between; background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 12px 16px; font-weight: 700; }
 .track-brand { display: flex; gap: 12px; align-items: center; justify-content: center; }
 
+/* ============ Kiosk ============ */
+.kiosk {
+  min-height: 100vh; display: flex; flex-direction: column;
+  background: radial-gradient(circle at 20% 0%, #e6f6f7, #f4f7f8 60%);
+  color: var(--ink); user-select: none;
+}
+.kiosk-head, .kiosk-foot {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 18px 28px;
+}
+.kiosk-head { border-bottom: 1px solid rgba(9, 64, 74, 0.08); }
+.kiosk-head .eyebrow { font-size: 1.15rem; margin: 0; }
+.kiosk-logo { height: 52px; width: auto; border-radius: 8px; object-fit: contain; }
+.kiosk-body { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px 24px; }
+.kiosk-welcome, .kiosk-step { width: min(1000px, 100%); text-align: center; display: flex; flex-direction: column; gap: 18px; align-items: center; }
+.kiosk-welcome h1 { font-size: clamp(2rem, 4vw, 3.2rem); margin: 0; }
+.kiosk-lead { font-size: 1.35rem; color: var(--muted); margin: 0; }
+.kiosk-step h1 { font-size: clamp(1.6rem, 3vw, 2.4rem); margin: 0; }
+.kiosk-big { font-size: 1.6rem; padding: 26px 64px; border-radius: 20px; }
+.kiosk-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; width: 100%; }
+.kiosk-choice {
+  min-height: 96px; display: flex; flex-direction: column; justify-content: center; gap: 6px;
+  font-size: 1.25rem; border-radius: 16px; background: #fff; border: 1px solid var(--line);
+  box-shadow: 0 2px 0 rgba(9, 64, 74, 0.06); padding: 16px 20px;
+}
+.kiosk-choice:not(.disabled):hover { border-color: var(--primary); }
+.kiosk-choice.disabled, .kiosk-choice:disabled { opacity: 0.55; cursor: not-allowed; background: #eef1f2; }
+.kiosk-choice-name { font-weight: 700; }
+.kiosk-choice-meta { font-size: 0.9rem; color: var(--muted); }
+.kiosk-account {
+  min-width: 320px; min-height: 68px; border-radius: 14px; background: #fff; border: 2px solid var(--primary);
+  display: grid; place-items: center; font-size: 2rem; letter-spacing: 3px; font-weight: 700; padding: 8px 24px;
+}
+.keypad { display: grid; grid-template-columns: repeat(3, 96px); gap: 10px; justify-content: center; }
+.keypad-key { min-height: 68px; font-size: 1.5rem; border-radius: 14px; background: #fff; border: 1px solid var(--line); color: var(--ink); }
+.keypad-key:hover { border-color: var(--primary); }
+.kiosk-number { font-size: clamp(4rem, 12vw, 8rem); font-weight: 800; line-height: 1; margin: 0; color: var(--primary-dark); letter-spacing: 2px; }
+.kiosk-service { font-size: 1.3rem; display: flex; gap: 10px; align-items: center; justify-content: center; margin: 0; }
+.kiosk-qr { background: #fff; border-radius: 16px; padding: 14px; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.kiosk-qr img { width: 180px; height: 180px; }
+.kiosk-issued { gap: 14px; }
+.kiosk-foot { color: var(--muted); font-size: 0.85rem; border-top: 1px solid rgba(9, 64, 74, 0.08); }
+.ticket-print .t-small { font-size: 10px; margin: 2px 0; }
+
 /* ============ Modal / extras ============ */
 .modal-backdrop {
   position: fixed; inset: 0; background: rgba(9, 33, 40, 0.55); display: grid; place-items: center;
@@ -430,6 +413,7 @@ kbd {
 .ticket-print { display: none; }
 @media print {
   body { background: #fff; }
+  .kiosk { background: #fff; min-height: 0; }
   .no-print, .kiosk-head, .kiosk-foot, .kiosk-ticket-info, .setup, .home, .counter, .admin, .display, .track { display: none !important; }
   .ticket-print {
     display: block; width: 58mm; margin: 0 auto; padding: 2mm 3mm; color: #000;

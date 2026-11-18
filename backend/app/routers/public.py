@@ -117,6 +117,17 @@ def display_media():
     return {"files": queue.media_playlist()}
 
 
+@router.post("/kiosk/printer")
+def kiosk_printer(payload: dict):
+    """Kiosk reports a printer problem (paper out / offline) for the admin alert."""
+    status = str(payload.get("status") or "").strip()
+    if status not in ("ok", "error"):
+        raise HTTPException(status_code=400, detail="invalid_status")
+    note = str(payload.get("note") or "").strip()[:200]
+    db.save_settings({"printer_status": status, "printer_note": note if status == "error" else ""})
+    return {"ok": True, "printer_status": status}
+
+
 @router.get("/qr")
 def qr_code(data: str, size: int = 160):
     try:
