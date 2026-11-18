@@ -196,7 +196,6 @@ def issue_ticket(
     finally:
         conn.close()
     ticket = get_ticket(ticket_id)
-    est = estimate_wait(conn=None, service_id=service_id) if False else None
     publish({"type": "ticket_issued", "ticket": ticket})
     return ticket
 
@@ -444,7 +443,8 @@ def resume(ticket_id: int, counter_id: int, staff_id: int | None = None) -> dict
         ticket = _load_active(conn, ticket_id)
         if ticket["status"] != "on_hold":
             raise QueueError("not_on_hold", 409)
-        wait = int(settings.get("recall_wait_seconds") or 60)
+        raw_wait = settings.get("recall_wait_seconds")
+        wait = int(60 if raw_wait is None else raw_wait)
         if ticket["last_event_at"] and wait > 0:
             elapsed = (db.parse_utc(db.utcnow()) - db.parse_utc(ticket["last_event_at"])).total_seconds()
             if elapsed < wait:
@@ -478,6 +478,8 @@ def transfer(ticket_id: int, to_service_id: int, counter_id: int, staff_id: int 
         ticket = _load_active(conn, ticket_id)
         if ticket["status"] not in ("waiting", "called", "serving"):
             raise QueueError("cannot_transfer", 409)
+        if ticket["status"] in ("called", "serving") and ticket["counter_id"] != counter_id:
+            raise QueueError("not_current_ticket", 409)
         target = _service(conn, to_service_id)
         if not target["is_active"]:
             raise QueueError("service_not_found", 404)
@@ -553,6 +555,32 @@ def reenter(ticket_id: int, counter_id: int, staff_id: int | None = None) -> dic
 
 # --- state snapshots ------------------------------------------------------
 
+def expire_old_tickets() -> int:
+    """Cancel tickets left active from a previous business date (daily reset)."""
+    conn = db.connect()
+    try:
+        settings = db.get_settings(conn)
+        bdate = business_date(settings)
+        conn.execute("BEGIN IMMEDIATE")
+        rows = conn.execute(
+            "SELECT id FROM tickets WHERE business_date < ? "
+            "AND status IN ('waiting','called','serving','on_hold')", (bdate,)
+        ).fetchall()
+        now = db.utcnow()
+        for row in rows:
+            conn.execute("UPDATE tickets SET status='cancelled', last_event_at=? WHERE id=?", (now, row["id"]))
+            _event(conn, row["id"], "expired")
+        conn.execute("COMMIT")
+    except Exception:
+        conn.execute("ROLLBACK")
+        raise
+    finally:
+        conn.close()
+    if rows:
+        publish({"type": "reset", "expired": len(rows)})
+    return len(rows)
+
+
 def counter_state(counter_id: int) -> dict:
     conn = db.connect()
     try:
@@ -560,7 +588,8 @@ def counter_state(counter_id: int) -> dict:
         counter = conn.execute("SELECT * FROM counters WHERE id=?", (counter_id,)).fetchone()
         if not counter:
             raise QueueError("counter_not_found", 404)
-        current = _current_for_counter(conn, counter_id)
+        current_row = _current_for_counter(conn, counter_id)
+        current = get_ticket(current_row["id"]) if current_row else None
         service_ids = active_service_ids(conn, counter_id)
         waiting = []
         if service_ids:
@@ -568,12 +597,17 @@ def counter_state(counter_id: int) -> dict:
             waiting = db.all_rows(conn, f"""
                 SELECT t.id, t.number, t.issued_at, t.priority_type_id, t.account_number,
                        s.name AS service_name, s.prefix,
-                       p.name_en AS priority_en, p.name_fil AS priority_fil,
-                       CAST((julianday('now') - julianday(t.issued_at)) * 86400 AS INTEGER) AS wait_seconds
+                       p.name_en AS priority_en, p.name_fil AS priority_fil
                 FROM tickets t JOIN services s ON s.id=t.service_id
                 LEFT JOIN priority_types p ON p.id=t.priority_type_id
                 WHERE t.status='waiting' AND t.service_id IN ({ph})
                 ORDER BY t.issued_at ASC""", service_ids)
+            now = db.parse_utc(db.utcnow())
+            for row in waiting:
+                try:
+                    row["wait_seconds"] = int((now - db.parse_utc(row["issued_at"])).total_seconds())
+                except (ValueError, TypeError):
+                    row["wait_seconds"] = 0
         parked = []
         if service_ids:
             ph = ",".join("?" * len(service_ids))
@@ -586,6 +620,15 @@ def counter_state(counter_id: int) -> dict:
                 WHERE t.status IN ('on_hold','no_show') AND t.service_id IN ({ph})
                 AND t.business_date = ?
                 ORDER BY t.last_event_at DESC LIMIT 25""", service_ids + [business_date(settings)])
+            wait = int(settings.get("recall_wait_seconds") or 0)
+            now = db.parse_utc(db.utcnow())
+            for row in parked:
+                try:
+                    elapsed = (now - db.parse_utc(row["last_event_at"])).total_seconds()
+                except (ValueError, TypeError):
+                    elapsed = wait
+                row["can_recall"] = row["status"] == "on_hold" and elapsed >= wait
+                row["recall_in"] = max(0, int(wait - elapsed))
         served_today = conn.execute(
             "SELECT COUNT(*) FROM tickets WHERE counter_id=? AND status='done' AND business_date=?",
             (counter_id, business_date(settings)),
@@ -602,6 +645,10 @@ def counter_state(counter_id: int) -> dict:
             "served_today": served_today,
             "waiting_count": len(waiting),
             "estimates": snapshots,
+            "services": db.all_rows(
+                conn, "SELECT id, name, prefix, is_active FROM services WHERE is_active=1 ORDER BY sort_order, id"),
+            "priorities": db.all_rows(
+                conn, "SELECT id, name_en, name_fil FROM priority_types WHERE is_active=1 ORDER BY sort_order, id"),
             "settings": _public_settings(settings),
             "server_now": db.utcnow(),
         }

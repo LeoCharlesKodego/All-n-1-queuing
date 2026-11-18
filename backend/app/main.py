@@ -6,10 +6,19 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import backups, db
+from . import backups, db, queue
 from .config import BACKUP_DIR, FRONTEND_DIST, MEDIA_DIR
 from .routers import admin, auth, counter, public, setup
 from .ws import manager
+
+
+async def reset_loop():
+    while True:
+        try:
+            await asyncio.to_thread(queue.expire_old_tickets)
+        except Exception:
+            pass
+        await asyncio.sleep(30)
 
 
 @asynccontextmanager
@@ -17,9 +26,12 @@ async def lifespan(app: FastAPI):
     db.init_db()
     backups.ensure_dirs()
     manager.set_loop(asyncio.get_running_loop())
+    await asyncio.to_thread(queue.expire_old_tickets)
     task = asyncio.create_task(backups.backup_loop())
+    reset_task = asyncio.create_task(reset_loop())
     yield
     task.cancel()
+    reset_task.cancel()
 
 
 app = FastAPI(title="Queue System", lifespan=lifespan, docs_url=None, redoc_url=None)

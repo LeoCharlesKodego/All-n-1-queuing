@@ -1,6 +1,6 @@
 # PLAN.md — Queue System build phases
 
-**Current phase:** Phase 2 — core queue
+**Current phase:** Phase 3 — kiosk and ticket
 **Last updated:** 2026-11-18
 
 Rules for this file:
@@ -38,17 +38,17 @@ Exit criteria:
 
 Goal: the queue works end to end, even if screens are plain.
 
-- [ ] Ticket issuing: per-service numbering with prefix, daily reset at the configured time
-- [ ] Priority types on tickets; `priority_first` and `interleave` modes
-- [ ] Per-service cut-off time enforced at issue time
-- [ ] Atomic call-next (single transaction); counter only sees its own services
-- [ ] Ticket lifecycle and events log (issue, call, recall, serve, done, skip, no-show, hold, resume, transfer)
-- [ ] Recall limit (3) with configurable wait, then no-show; re-entry at end of line
-- [ ] Transfer between services (optionally keeping original place)
-- [ ] Staff accounts (admin-created) with PIN login and assigned counter
-- [ ] Counter console: all actions, running timer, waiting list, counts, break / away / close, keyboard shortcuts
-- [ ] WebSocket updates for counter changes
-- [ ] Estimated wait calculation
+- [x] Ticket issuing: per-service numbering with prefix, daily reset at the configured time
+- [x] Priority types on tickets; `priority_first` and `interleave` modes
+- [x] Per-service cut-off time enforced at issue time
+- [x] Atomic call-next (single transaction); counter only sees its own services
+- [x] Ticket lifecycle and events log (issue, call, recall, serve, done, skip, no-show, hold, resume, transfer)
+- [x] Recall limit (3) with configurable wait, then no-show; re-entry at end of line
+- [x] Transfer between services (optionally keeping original place)
+- [x] Staff accounts (admin-created) with PIN login and assigned counter
+- [x] Counter console: all actions, running timer, waiting list, counts, break / away / close, keyboard shortcuts
+- [x] WebSocket updates for counter changes
+- [x] Estimated wait calculation
 
 Exit criteria:
 - Two counters pressing Call Next at the same moment never receive the same ticket (tested live, repeated many times)
@@ -164,6 +164,13 @@ Windows installer, online tracking, SMS notifications, appointments / pre-bookin
 ## Progress log
 
 (The agent adds one short entry per finished phase: date, phase, what was done and how it was verified, what is deferred or `[pending user]`, how to run it.)
+
+### 2026-11-18 — Phase 2 — Core queue ✅
+- Backend: staff PIN auth (PBKDF2, rate limit, session cookie), call-next/start/done/recall/skip/hold/resume/transfer/reenter/status/issue endpoints, admin staff CRUD, daily-reset sweep that cancels previous business dates, ticket events log.
+- Frontend: `/counter` console (login, current ticket + timer, waiting and parked lists, action grid, transfer/issue modals, keyboard shortcuts, EN/FIL switch).
+- Verified live via Playwright + API scripts: 30 simultaneous call-next requests on 3 counters produced 0 duplicates; interleave and priority_first ordering; transfer (new number called by target counter), hold/resume with recall wait, skip×3 → no-show → reentry, staff-issued ticket, break/away, logout; WebSocket pushed a new ticket to an open console without reload; cutoff returned 409; previous-day waiting ticket auto-cancelled with `expired` event.
+- Deferred: counter/service editing UI in admin (Phase 5).
+- Run: same as Phase 1; `/counter` PINs from `POST /api/admin/staff` (demo staff ana/1111 … eve/5555 created by `scripts/queue_check.py`).
 
 ### 2026-11-18 — Phase 1 — Foundation ✅
 - Backend: FastAPI app, SQLite schema/migrations, typed settings, PBKDF2 admin auth + session cookies, login rate limit (5 fails / 5 min), backup module.

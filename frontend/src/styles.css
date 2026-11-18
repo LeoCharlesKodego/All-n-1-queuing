@@ -403,6 +403,29 @@ tr:last-child td { border-bottom: 0; }
 .now-serving-row { display: flex; justify-content: space-between; background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 12px 16px; font-weight: 700; }
 .track-brand { display: flex; gap: 12px; align-items: center; justify-content: center; }
 
+/* ============ Modal / extras ============ */
+.modal-backdrop {
+  position: fixed; inset: 0; background: rgba(9, 33, 40, 0.55); display: grid; place-items: center;
+  padding: 20px; z-index: 60;
+}
+.modal {
+  background: #fff; border-radius: 16px; padding: 22px; width: min(460px, 100%);
+  display: flex; flex-direction: column; gap: 14px; box-shadow: 0 24px 60px rgba(0,0,0,0.25);
+}
+.notice-box {
+  background: #e3f5ec; color: var(--success); border: 1px solid #bfe4d2; padding: 10px 14px;
+  border-radius: 10px; font-weight: 600; font-size: 0.9rem;
+}
+kbd {
+  background: rgba(0, 0, 0, 0.08); border-radius: 4px; padding: 1px 5px; font-size: 0.7rem;
+  font-family: inherit; font-weight: 700; margin-left: 4px;
+}
+.waiting-card { padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.waiting-card h2 { font-size: 1rem; }
+.counter-top .lang-switch { border-color: rgba(255,255,255,0.25); background: rgba(255,255,255,0.08); }
+.counter-top .lang-switch button { color: #d7e8eb; }
+.counter-top .lang-switch button.active { background: #fff; color: var(--primary-dark); }
+
 /* ============ Print ============ */
 .ticket-print { display: none; }
 @media print {
