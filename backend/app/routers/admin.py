@@ -4,9 +4,9 @@ import socket
 from datetime import datetime
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, Response
 
-from .. import backups, db, presets, queue, security, ws
+from .. import backups, db, presets, queue, reports, security, ws
 from ..config import BACKUP_DIR, FRONTEND_DIST, MEDIA_DIR, IMAGE_EXTENSIONS, VIDEO_EXTENSIONS
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
@@ -703,3 +703,96 @@ def reset_demo(request: Request):
         conn.close()
     ws.publish({"type": "settings_changed"})
     return {"ok": True}
+
+
+# --- reports --------------------------------------------------------------
+
+def _report_range(date_from, date_to, settings):
+    if not date_from or not date_to:
+        today_local = queue.business_date(settings)
+        date_from = date_from or today_local
+        date_to = date_to or today_local
+    try:
+        start = datetime.fromisoformat(date_from).date()
+        end = datetime.fromisoformat(date_to).date()
+    except ValueError:
+        raise HTTPException(status_code=400, detail="invalid_date")
+    if start > end:
+        raise HTTPException(status_code=400, detail="invalid_date_range")
+    return start.isoformat(), end.isoformat()
+
+
+def _report_filters(date_from, date_to, service_id, counter_id, staff_id, settings):
+    start, end = _report_range(date_from, date_to, settings)
+    conn = db.connect()
+    try:
+        data = reports.build(
+            conn, start, end, settings.get("timezone"),
+            service_id=service_id, counter_id=counter_id, staff_id=staff_id)
+    finally:
+        conn.close()
+    return data
+
+
+@router.get("/reports")
+def report_data(request: Request, date_from: str = "", date_to: str = "",
+                service_id: int | None = None, counter_id: int | None = None,
+                staff_id: int | None = None, search: str = ""):
+    security.require_admin(request)
+    settings = db.get_settings()
+    data = _report_filters(date_from, date_to, service_id, counter_id, staff_id, settings)
+    if search:
+        conn = db.connect()
+        try:
+            rows = reports.ticket_rows(conn, data["from"], data["to"], service_id, counter_id, staff_id)
+        finally:
+            conn.close()
+        needle = search.strip().lower()
+        data["history"] = [r for r in rows if needle in (r["number"] or "").lower()
+                           or needle in (r["account_number"] or "").lower()
+                           or needle in (r["public_id"] or "").lower()][:300]
+    return data
+
+
+@router.get("/reports/tickets/{ticket_id}")
+def report_ticket(ticket_id: int, request: Request):
+    security.require_admin(request)
+    conn = db.connect()
+    try:
+        data = reports.timeline(conn, ticket_id)
+    finally:
+        conn.close()
+    if not data:
+        raise HTTPException(status_code=404, detail="ticket_not_found")
+    return data
+
+
+@router.get("/reports/export.csv")
+def report_csv(request: Request, date_from: str = "", date_to: str = "",
+               service_id: int | None = None, counter_id: int | None = None,
+               staff_id: int | None = None):
+    security.require_admin(request)
+    settings = db.get_settings()
+    data = _report_filters(date_from, date_to, service_id, counter_id, staff_id, settings)
+    conn = db.connect()
+    try:
+        rows = reports.ticket_rows(conn, data["from"], data["to"], service_id, counter_id, staff_id)
+    finally:
+        conn.close()
+    body = reports.tickets_csv(rows)
+    filename = f"queue-tickets-{data['from']}_{data['to']}.csv"
+    return Response(content=body.encode("utf-8"), media_type="text/csv; charset=utf-8",
+                    headers={"Content-Disposition": f'attachment; filename="{filename}"'})
+
+
+@router.get("/reports/export.pdf")
+def report_pdf(request: Request, date_from: str = "", date_to: str = "",
+               service_id: int | None = None, counter_id: int | None = None,
+               staff_id: int | None = None):
+    security.require_admin(request)
+    settings = db.get_settings()
+    data = _report_filters(date_from, date_to, service_id, counter_id, staff_id, settings)
+    body = reports.summary_pdf(data, settings.get("institution_name") or "Queue reports")
+    filename = f"queue-summary-{data['from']}_{data['to']}.pdf"
+    return Response(content=body, media_type="application/pdf",
+                    headers={"Content-Disposition": f'attachment; filename="{filename}"'})

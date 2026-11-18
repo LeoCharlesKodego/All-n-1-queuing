@@ -1,6 +1,6 @@
 # PLAN.md — Queue System build phases
 
-**Current phase:** Phase 6 — reports
+**Current phase:** Phase 7 — phone tracking and polish
 **Last updated:** 2026-11-18
 
 Rules for this file:
@@ -122,15 +122,15 @@ Exit criteria:
 
 Goal: managers can see and export what happened.
 
-- [ ] Daily summary
-- [ ] Volume by hour and by day / week
-- [ ] By service
-- [ ] By counter and by staff (served, average service time, idle and break time)
-- [ ] Priority lane report
-- [ ] Searchable ticket history with full timeline
-- [ ] Date range picker, filters (service, counter, staff)
-- [ ] CSV and PDF export; print-friendly daily summary
-- [ ] Admin-only access enforced on the server
+- [x] Daily summary
+- [x] Volume by hour and by day / week
+- [x] By service
+- [x] By counter and by staff (served, average service time, idle and break time)
+- [x] Priority lane report
+- [x] Searchable ticket history with full timeline
+- [x] Date range picker, filters (service, counter, staff)
+- [x] CSV and PDF export; print-friendly daily summary
+- [x] Admin-only access enforced on the server
 
 Exit criteria:
 - Report numbers match the underlying tickets and events (spot-checked by hand)
@@ -165,6 +165,12 @@ Windows installer, online tracking, SMS notifications, appointments / pre-bookin
 ## Progress log
 
 (The agent adds one short entry per finished phase: date, phase, what was done and how it was verified, what is deferred or `[pending user]`, how to run it.)
+
+### 2026-11-18 — Phase 6 — Reports ✅
+- Backend: `reports.py` aggregation (summary, hourly, daily, service, counter/staff busy-idle-break, priority, history, per-ticket timeline), CSV with BOM for Excel, hand-rolled text PDF; admin-only endpoints `/api/admin/reports`, `/reports/tickets/{id}`, `/reports/export.csv`, `/reports/export.pdf`.
+- Frontend: Reports tab with range shortcuts, service/counter/staff filters, summary cards, 24-hour bars, daily/service/counter/staff/priority tables, searchable history with timeline modal, CSV/PDF links, print-only header.
+- Verified live via `scripts/ui_phase6.py` (20/20 checks): UI numbers equal API and hand-run SQL (76 issued, 45 done, 1 no-show, 1 transferred, avg 2m 22s, peak 11:00/66); service filter 11; yesterday 0; CSV/PDF downloads open (PDF rendered in Chrome); print media hides controls; Filipino tab renders; no page errors.
+- Proposed: none. Run: same server; open `/admin` → Reports (admin `admin`/`secret123`).
 
 ### 2026-11-18 — Phase 5 — Admin panel ✅
 - Tabbed admin panel: dashboard (stats, queue alerts, counters, printer), Services, Counters, Staff, Priority rules, Display & media, Kiosk & ticket, System; all text in EN/FIL.

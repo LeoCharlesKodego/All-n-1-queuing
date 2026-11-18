@@ -1009,6 +1009,317 @@ function SystemTab({ t, boot, onSetupChange }) {
   );
 }
 
+// --- reports --------------------------------------------------------------
+
+const REPORT_STATUS_KEYS = {
+  waiting: "counter.waiting",
+  called: "counter.called",
+  serving: "counter.serving",
+  done: "counter.done",
+  no_show: "counter.no_show",
+  transferred: "counter.transfer",
+  expired: "reports.event.expired",
+};
+
+function statusKey(status) {
+  return REPORT_STATUS_KEYS[status] || "reports.status";
+}
+
+function ReportsTab({ t }) {
+  const [filters, setFilters] = useState({ date_from: "", date_to: "", service_id: "", counter_id: "", staff_id: "", search: "" });
+  const [applied, setApplied] = useState({ date_from: "", date_to: "", service_id: "", counter_id: "", staff_id: "" });
+  const [lookups, setLookups] = useState({ services: [], counters: [], staff: [] });
+  const [data, setData] = useState(null);
+  const [timeline, setTimeline] = useState(null);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const query = (extra = {}) => {
+    const params = new URLSearchParams();
+    Object.entries({ ...applied, ...extra }).forEach(([key, value]) => {
+      if (value !== "" && value !== null && value !== undefined) params.set(key, value);
+    });
+    return params.toString();
+  };
+
+  const load = useCallback(async (next = applied) => {
+    setLoading(true);
+    setError("");
+    try {
+      const params = new URLSearchParams();
+      Object.entries(next).forEach(([key, value]) => {
+        if (value !== "") params.set(key, value);
+      });
+      const result = await api(`/api/admin/reports?${params.toString()}`);
+      setData(result);
+      setApplied({ date_from: result.from, date_to: result.to, service_id: next.service_id, counter_id: next.counter_id, staff_id: next.staff_id });
+      setFilters((f) => ({ ...f, date_from: result.from, date_to: result.to }));
+    } catch (err) {
+      setError(typeof err.detail === "string" ? `error.${err.detail}` : "admin.save_failed");
+    } finally {
+      setLoading(false);
+    }
+  }, [applied]);
+
+  useEffect(() => {
+    api("/api/admin/lookups").then((r) => setLookups((prev) => ({ ...prev, services: r.services || [], counters: r.counters || [] }))).catch(() => {});
+    api("/api/admin/staff").then((r) => setLookups((prev) => ({ ...prev, staff: r.staff || [] }))).catch(() => {});
+    load({ date_from: "", date_to: "", service_id: "", counter_id: "", staff_id: "" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const setDay = (offsetStart, offsetEnd) => {
+    const day = (offset) => {
+      const d = new Date();
+      d.setDate(d.getDate() + offset);
+      return d.toISOString().slice(0, 10);
+    };
+    setFilters({ ...filters, date_from: day(offsetStart), date_to: day(offsetEnd) });
+  };
+
+  const openTimeline = async (ticket) => {
+    const result = await api(`/api/admin/reports/tickets/${ticket.id}`);
+    setTimeline(result);
+  };
+
+  const summaryCards = data ? [
+    ["reports.issued", data.summary.issued],
+    ["reports.served", data.summary.served],
+    ["reports.no_show", data.summary.no_show],
+    ["reports.transferred", data.summary.transferred],
+    ["reports.avg_wait", formatDuration(data.summary.avg_wait_seconds)],
+    ["reports.longest_wait", formatDuration(data.summary.longest_wait_seconds)],
+    ["reports.avg_service", formatDuration(data.summary.avg_service_seconds)],
+    ["reports.peak_hour", data.summary.peak_hour === null ? "—" : `${data.summary.peak_hour}:00`],
+  ] : [];
+  const maxHour = data ? Math.max(1, ...data.hourly.map((h) => h.issued)) : 1;
+
+  return (
+    <div className="panel report-area">
+      <div className="print-only report-print-head">
+        <h1>{t("reports.print_title")}</h1>
+        <p>{data ? `${data.from} — ${data.to}` : ""}</p>
+        <p>{t("reports.generated", { when: new Date().toLocaleString() })}</p>
+      </div>
+      <div className="panel-head report-actions">
+        <h2>{t("reports.title")}</h2>
+        <div className="row gap">
+          <button className="btn small" onClick={() => window.print()}>{t("reports.print")}</button>
+          <a className="btn small" href={`/api/admin/reports/export.csv?${query()}`}>{t("reports.export_csv")}</a>
+          <a className="btn small" href={`/api/admin/reports/export.pdf?${query()}`}>{t("reports.export_pdf")}</a>
+        </div>
+      </div>
+      <div className="card stack report-filters">
+        <div className="row between">
+          <span className="field-label">{t("reports.range")}</span>
+          <div className="row gap">
+            <button className="btn small ghost" onClick={() => setDay(0, 0)}>{t("reports.today")}</button>
+            <button className="btn small ghost" onClick={() => setDay(-6, 0)}>{t("reports.week")}</button>
+            <button className="btn small ghost" onClick={() => setDay(1 - new Date().getDate(), 0)}>{t("reports.month")}</button>
+          </div>
+        </div>
+        <div className="form-grid">
+          <Field label={t("reports.from")}>
+            <input type="date" value={filters.date_from} onChange={(e) => setFilters({ ...filters, date_from: e.target.value })} />
+          </Field>
+          <Field label={t("reports.to")}>
+            <input type="date" value={filters.date_to} onChange={(e) => setFilters({ ...filters, date_to: e.target.value })} />
+          </Field>
+          <Field label={t("reports.service")}>
+            <select value={filters.service_id} onChange={(e) => setFilters({ ...filters, service_id: e.target.value })}>
+              <option value="">{t("reports.all")}</option>
+              {lookups.services.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+          </Field>
+          <Field label={t("reports.counter")}>
+            <select value={filters.counter_id} onChange={(e) => setFilters({ ...filters, counter_id: e.target.value })}>
+              <option value="">{t("reports.all")}</option>
+              {lookups.counters.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </Field>
+          <Field label={t("reports.staff")}>
+            <select value={filters.staff_id} onChange={(e) => setFilters({ ...filters, staff_id: e.target.value })}>
+              <option value="">{t("reports.all")}</option>
+              {lookups.staff.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+          </Field>
+        </div>
+        <div className="row gap">
+          <button className="btn primary" disabled={loading} onClick={() => load(filters)}>
+            {loading ? t("common.loading") : t("reports.apply")}
+          </button>
+          {error && <span className="error-box">{t(error)}</span>}
+        </div>
+      </div>
+
+      {!data ? (
+        <p className="muted">{t("common.loading")}</p>
+      ) : (
+        <>
+          <h3>{t("reports.summary")}</h3>
+          <div className="stat-grid">
+            {summaryCards.map(([label, value]) => (
+              <div className="stat-card" key={label}>
+                <span className="label">{t(label)}</span>
+                <span className="value">{value}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="card stack">
+            <h2>{t("reports.by_hour")}</h2>
+            <div className="hour-chart">
+              {data.hourly.map((hour) => (
+                <div className="hour-col" key={hour.hour} title={`${hour.hour}:00 — ${hour.issued}`}>
+                  <div className="hour-bar" style={{ height: `${Math.round((hour.issued / maxHour) * 100)}%` }} />
+                  <span>{hour.hour}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {data.daily.length > 1 && (
+            <div className="card stack">
+              <h2>{t("reports.by_day")}</h2>
+              <div className="table-wrap">
+                <table>
+                  <thead><tr><th>{t("reports.from")}</th><th>{t("reports.issued")}</th><th>{t("reports.served")}</th><th>{t("reports.no_show")}</th></tr></thead>
+                  <tbody>
+                    {data.daily.map((day) => (
+                      <tr key={day.date}><td>{day.date}</td><td>{day.issued}</td><td>{day.served}</td><td>{day.no_show}</td></tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          <div className="card stack">
+            <h2>{t("reports.by_service")}</h2>
+            <div className="table-wrap">
+              <table>
+                <thead><tr><th>{t("reports.service")}</th><th>{t("reports.issued")}</th><th>{t("reports.served")}</th><th>{t("reports.no_show")}</th><th>{t("reports.avg_wait_col")}</th></tr></thead>
+                <tbody>
+                  {data.services.map((row) => (
+                    <tr key={row.id}><td>{row.name}</td><td>{row.issued}</td><td>{row.served}</td><td>{row.no_show}</td><td>{formatDuration(row.avg_wait_seconds)}</td></tr>
+                  ))}
+                  {data.services.length === 0 && <tr><td colSpan={5} className="muted">{t("reports.no_rows")}</td></tr>}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="card stack">
+            <h2>{t("reports.by_counter")}</h2>
+            <div className="table-wrap">
+              <table>
+                <thead><tr><th>{t("reports.counter")}</th><th>{t("reports.served")}</th><th>{t("reports.avg_service")}</th><th>{t("reports.busy")}</th><th>{t("reports.idle")}</th><th>{t("reports.break")}</th></tr></thead>
+                <tbody>
+                  {data.counters.map((row) => (
+                    <tr key={row.id}><td>{row.name}</td><td>{row.served}</td><td>{formatDuration(row.avg_service_seconds)}</td><td>{formatDuration(row.busy_seconds)}</td><td>{formatDuration(row.idle_seconds)}</td><td>{formatDuration(row.break_seconds)}</td></tr>
+                  ))}
+                  {data.counters.length === 0 && <tr><td colSpan={6} className="muted">{t("reports.no_rows")}</td></tr>}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="card stack">
+            <h2>{t("reports.by_staff")}</h2>
+            <div className="table-wrap">
+              <table>
+                <thead><tr><th>{t("reports.staff")}</th><th>{t("reports.served")}</th><th>{t("reports.avg_service")}</th><th>{t("reports.busy")}</th><th>{t("reports.idle")}</th><th>{t("reports.break")}</th></tr></thead>
+                <tbody>
+                  {data.staff.map((row) => (
+                    <tr key={row.id}><td>{row.name}</td><td>{row.served}</td><td>{formatDuration(row.avg_service_seconds)}</td><td>{formatDuration(row.busy_seconds)}</td><td>{formatDuration(row.idle_seconds)}</td><td>{formatDuration(row.break_seconds)}</td></tr>
+                  ))}
+                  {data.staff.length === 0 && <tr><td colSpan={6} className="muted">{t("reports.no_rows")}</td></tr>}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="card stack">
+            <h2>{t("reports.priority")}</h2>
+            <div className="table-wrap">
+              <table>
+                <thead><tr><th>{t("reports.priority")}</th><th>{t("reports.count")}</th><th>{t("reports.avg_wait_col")}</th></tr></thead>
+                <tbody>
+                  {data.priority.map((row) => (
+                    <tr key={row.id ?? "regular"}>
+                      <td>{row.regular ? t("reports.priority_regular") : row.name}</td>
+                      <td>{row.count}</td>
+                      <td>{formatDuration(row.avg_wait_seconds)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="card stack report-history">
+            <div className="row between">
+              <h2>{t("reports.history")}</h2>
+              <div className="row gap">
+                <input
+                  placeholder={t("reports.search_ph")}
+                  value={filters.search}
+                  onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+                />
+                <button className="btn small" onClick={() => load({ ...filters })}>{t("common.search")}</button>
+              </div>
+            </div>
+            <div className="table-wrap">
+              <table>
+                <thead><tr><th>{t("reports.number")}</th><th>{t("reports.service")}</th><th>{t("reports.status")}</th><th>{t("reports.staff")}</th><th>{t("reports.when")}</th></tr></thead>
+                <tbody>
+                  {data.history.map((ticket) => (
+                    <tr key={ticket.id} className="clickable" onClick={() => openTimeline(ticket)}>
+                      <td>{ticket.number}</td>
+                      <td>{ticket.service_name}</td>
+                      <td><span className={`pill ${ticket.status === "done" ? "green" : ticket.status === "no_show" ? "red" : "blue"}`}>{t(statusKey(ticket.status))}</span></td>
+                      <td>{ticket.staff_name || "—"}</td>
+                      <td className="muted small">{formatTime(ticket.issued_at)}</td>
+                    </tr>
+                  ))}
+                  {data.history.length === 0 && <tr><td colSpan={5} className="muted">{t("reports.no_rows")}</td></tr>}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      )}
+
+      {timeline && (
+        <Modal title={`${t("reports.timeline")} · ${timeline.ticket.number}`} onClose={() => setTimeline(null)}>
+          <div className="stack">
+            <div className="row gap" style={{ flexWrap: "wrap" }}>
+              <span className="pill blue">{timeline.ticket.service_name}</span>
+              <span className="pill">{t(statusKey(timeline.ticket.status))}</span>
+              {timeline.ticket.priority_en && <span className="pill amber">{timeline.ticket.priority_en}</span>}
+              {timeline.ticket.account_number && <span className="muted small">#{timeline.ticket.account_number}</span>}
+            </div>
+            <div className="table-wrap">
+              <table>
+                <thead><tr><th>{t("reports.when")}</th><th>{t("reports.event")}</th><th>{t("reports.by")}</th></tr></thead>
+                <tbody>
+                  {timeline.events.map((event) => (
+                    <tr key={event.id}>
+                      <td className="small">{formatTime(event.created_at)}</td>
+                      <td>{t(`reports.event.${event.event_type}`)}</td>
+                      <td className="muted small">{[event.staff_name, event.counter_name].filter(Boolean).join(" · ") || "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+}
+
 // --- shell ----------------------------------------------------------------
 
 export default function Admin({ boot, onSetupChange }) {
@@ -1094,7 +1405,7 @@ export default function Admin({ boot, onSetupChange }) {
     );
   }
 
-  const tabs = ["dashboard", "services", "counters", "staff", "priority", "display", "kiosk", "system"];
+  const tabs = ["dashboard", "services", "counters", "staff", "priority", "reports", "display", "kiosk", "system"];
   return (
     <div className="admin">
       <header className="topbar">
@@ -1125,6 +1436,7 @@ export default function Admin({ boot, onSetupChange }) {
       {tab === "counters" && <CountersTab t={t} />}
       {tab === "staff" && <StaffTab t={t} />}
       {tab === "priority" && <PriorityTab t={t} />}
+      {tab === "reports" && <ReportsTab t={t} />}
       {tab === "display" && <DisplayTab t={t} />}
       {tab === "kiosk" && <KioskTab t={t} />}
       {tab === "system" && <SystemTab t={t} boot={boot} onSetupChange={onSetupChange} />}
